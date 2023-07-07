@@ -1,6 +1,6 @@
 use crate::{
     board::{clear_bit, get_bit, set_bit, Bits, Board, BoardIndex},
-    r#move::{gen::generate_legal_moves, list::MoveList, Move},
+    mov::Move,
 };
 
 pub mod fen;
@@ -130,14 +130,12 @@ pub fn index_to_alg(index: BoardIndex) -> String {
 pub struct Position {
     pub white: PositionPieces,
     pub black: PositionPieces,
-    pub en_passant: BoardIndex,
+    pub en_passant: Option<BoardIndex>,
     pub castles: Bits,
     pub turn: Color,
-    move_cache: Option<MoveList>,
 }
 
 impl Position {
-    pub const NO_EN_PASSANT: u8 = 255;
     #[allow(dead_code)]
     pub const STANDARD_FEN: &'static str =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0";
@@ -147,10 +145,9 @@ impl Position {
         Position {
             white: self.black.mirror(),
             black: self.white.mirror(),
-            en_passant: Board::mirror_index(self.en_passant),
+            en_passant: self.en_passant.map(Board::mirror_index),
             castles: Board::mirror_board(self.castles),
             turn: self.turn.clone(),
-            move_cache: None, // discard move cache
         }
     }
 
@@ -174,8 +171,6 @@ impl Position {
             Piece::Queen => set_bit(&mut pieces.queens, index),
             Piece::King => set_bit(&mut pieces.king, index),
         };
-
-        self.move_cache = None;
     }
 
     /// Clears the specified square.
@@ -195,8 +190,6 @@ impl Position {
         clear_bit(&mut self.black.rooks, index);
         clear_bit(&mut self.black.queens, index);
         clear_bit(&mut self.black.king, index);
-
-        self.move_cache = None;
     }
 
     /// Returns the color and piece of a specified square or None if there is no piece there.
@@ -257,15 +250,6 @@ impl Position {
         Some(piece)
     }
 
-    /// Returns true if the given move is valid in this position.
-    pub fn validate_move(&self, mov: &Move) -> bool {
-        let moves = match &self.move_cache {
-            None => generate_legal_moves(self),
-            Some(x) => x.clone(),
-        };
-        moves.contains(mov)
-    }
-
     /// Applies the given move to the position.
     /// Assumes the move is valid.
     /// Returns the new Position and the captured piece, if there was one.
@@ -310,10 +294,9 @@ impl Default for Position {
         Position {
             white: PositionPieces::empty(),
             black: PositionPieces::empty(),
-            en_passant: Position::NO_EN_PASSANT,
+            en_passant: None,
             castles: 0,
             turn: Color::Black,
-            move_cache: None,
         }
     }
 }

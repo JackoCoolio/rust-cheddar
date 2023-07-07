@@ -9,8 +9,8 @@ use crate::{
         slide::SlideFill,
         south_pawn_attacks,
     },
+    mov::{list::MoveList, Move, MoveFlag},
     position::{Color, Position},
-    r#move::{list::MoveList, Move, MoveFlag},
 };
 
 pub fn least_set_one_bit(board: Bits) -> Bits {
@@ -200,8 +200,8 @@ fn generate_white_legal_target_bitboards(pos: &Position) -> TargetBoards {
 
     // pawn captures
     let pawn_targets: Bits = (pos.black.get_all_pieces() & target_mask)
-        | if pos.en_passant < 64 {
-            (1_u64 << pos.en_passant) & -((pos.en_passant < 64) as i64) as u64
+        | if let Some(en_passant) = pos.en_passant {
+            (1_u64 << en_passant) & -((en_passant < 64) as i64) as u64
         } else {
             0
         };
@@ -391,7 +391,7 @@ pub fn generate_legal_moves(_pos: &Position) -> MoveList {
                     from,
                     MoveFlag::PROMOTION | MoveFlag::QUEEN_PROMOTION | capture_flag,
                 ));
-            } else if to == pos.en_passant {
+            } else if pos.en_passant.is_some_and(|val| val == to) {
                 // en passant
                 // we know it's a capture, so ignore capture_flag
                 move_list.append(Move::new(
@@ -636,7 +636,7 @@ pub fn generate_legal_moves(_pos: &Position) -> MoveList {
                     from,
                     MoveFlag::PROMOTION | MoveFlag::QUEEN_PROMOTION | capture_flag,
                 ));
-            } else if to == pos.en_passant {
+            } else if pos.en_passant.is_some_and(|val| val == to) {
                 // en passant
                 // we know it's a capture, so ignore capture_flag
                 move_list.append(Move::new(

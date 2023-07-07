@@ -1,16 +1,17 @@
 use crate::{
+    mov::{gen::generate_legal_moves, list::MoveList, Move},
     position::Position,
-    r#move::{gen::generate_legal_moves, list::MoveList, Move},
 };
 
-use super::{eval::Evaluate, Score};
+use super::Score;
 
-pub fn negamax<E>(pos: &Position, eval: &E, depth: u8) -> Score
-where
-    E: Evaluate,
-{
+pub fn negamax<E: FnMut(&Position) -> Score>(
+    pos: &Position,
+    evaluator: &mut E,
+    depth: u8,
+) -> Score {
     if depth == 0 {
-        return eval.evaluate(pos);
+        return evaluator(pos);
     }
 
     let mut max = std::i32::MIN + 1;
@@ -18,7 +19,7 @@ where
 
     for mov in moves.into_iter() {
         let (next_pos, _) = pos.apply_move(&mov);
-        let score = -negamax(&next_pos, eval, depth - 1);
+        let score = -negamax(&next_pos, evaluator, depth - 1);
         if score > max {
             max = score;
         }
@@ -27,10 +28,11 @@ where
     max
 }
 
-pub fn find_best_move<E>(pos: &Position, eval: &E, depth: u8) -> Move
-where
-    E: Evaluate,
-{
+pub fn find_best_move<E: FnMut(&Position) -> Score>(
+    pos: &Position,
+    eval: &mut E,
+    depth: u8,
+) -> Move {
     let mut best: (Move, i32) = (Default::default(), std::i32::MIN);
     let moves: MoveList = generate_legal_moves(pos);
 

@@ -3,12 +3,11 @@ use crate::{
     position::Color,
 };
 
-use super::Position;
+use super::{index_to_alg, Position};
 
 impl Position {
     /// Initalizes a Position from a FEN string.
     pub fn from_fen(fen: String) -> Result<Position, String> {
-        println!("from_fen: parsing fen '{}'", fen);
         let mut pos: Position = Default::default();
 
         let mut stage = 0;
@@ -16,10 +15,6 @@ impl Position {
         let mut ep_file: Option<u8> = None;
 
         for (i, c) in fen.chars().enumerate() {
-            println!(
-                "from_fen: index = {}, stage = {}, skip_offset = {}, ep_file = {:?}",
-                i, stage, skip_offset, ep_file
-            );
             if !c.is_ascii() {
                 return Err(format!(
                     "fen parsing encountered non-ASCII symbol '{}' at index {}",
@@ -107,11 +102,11 @@ impl Position {
 
                         if c.is_alphabetic() && ep_file.is_none() {
                             ep_file = Some(c.to_ascii_lowercase() as u8 - b'a');
-                        } else if ep_file.is_some() {
+                        } else if let Some(ep_file) = ep_file {
                             match c.to_digit(10) {
                                 Some(x) => {
                                     pos.en_passant =
-                                        (x as BoardIndex - 1) * 8 + ep_file.unwrap() as BoardIndex;
+                                        Some((x as BoardIndex - 1) * 8 + ep_file as BoardIndex);
                                 }
                                 None => {
                                     return Err(format!(
@@ -211,9 +206,10 @@ impl Position {
 
         out.push(' ');
 
-        if self.en_passant > 63 {
-            out.push('-');
+        if let Some(en_passant) = self.en_passant {
+            out.push_str(&index_to_alg(en_passant));
         } else {
+            out.push('-');
         }
 
         out

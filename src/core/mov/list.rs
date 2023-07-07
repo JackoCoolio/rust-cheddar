@@ -1,4 +1,4 @@
-use crate::r#move::Move;
+use crate::mov::Move;
 
 #[derive(Clone, Debug)]
 pub struct MoveList {

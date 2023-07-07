@@ -45,6 +45,7 @@ impl Move {
         ((self.bits >> 6) & 0x3f) as u8
     }
 
+    #[inline]
     pub fn get_flags(&self) -> u8 {
         ((self.bits >> 12) & 0xf) as u8
     }
@@ -59,8 +60,26 @@ impl Move {
         self.bits |= (from as u16 & 0x3f) << 6;
     }
 
+    #[inline]
     pub fn is_capture(&self) -> bool {
-        (((MoveFlag::CAPTURE as u16) << 12) & self.bits) != 0
+        return self.get_flags() & MoveFlag::CAPTURE != 0;
+    }
+
+    #[inline]
+    pub fn is_promotion(&self) -> bool {
+        return self.get_flags() & MoveFlag::PROMOTION != 0;
+    }
+
+    pub fn is_double_pawn_push(self: Move) -> bool {
+        let flags = self.get_flags();
+        return !(flags & MoveFlag::PROMOTION != 0)
+            && !(flags & MoveFlag::CAPTURE != 0)
+            && (flags & MoveFlag::DOUBLE_PAWN_PUSH != 0);
+    }
+
+    pub fn is_en_passant(self: Move) -> bool {
+        let flags = self.get_flags();
+        return !self.is_promotion() && self.is_capture() && flags & MoveFlag::EN_PASSANT != 0;
     }
 
     pub fn get_butterfly_index(&self) -> u8 {
@@ -78,10 +97,6 @@ impl Move {
             Board::mirror_index(mov.get_from()),
             mov.get_flags(),
         )
-    }
-
-    pub fn is_promotion(&self) -> bool {
-        (((MoveFlag::PROMOTION as u16) << 12) & self.bits) != 0
     }
 
     pub fn get_promotion_piece(&self) -> Option<Piece> {

@@ -41,7 +41,7 @@ fn test_standard_fen() {
     assert_eq!(pos.black.queens, 0x0800000000000000);
     assert_eq!(pos.black.king, 0x1000000000000000);
 
-    assert_eq!(pos.en_passant, Position::NO_EN_PASSANT);
+    assert!(pos.en_passant.is_none());
 
     // test reverse (move count isn't implemented, so ignore that)
     assert!(Position::STANDARD_FEN.starts_with(&pos.to_fen()));
@@ -52,7 +52,7 @@ fn test_fen_en_passant() {
     let pos =
         Position::from_fen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1".into())
             .expect("couldn't parse fen");
-    assert_eq!(pos.en_passant, 20);
+    assert!(pos.en_passant.is_some_and(|val| val == 20));
 }
 
 #[test]

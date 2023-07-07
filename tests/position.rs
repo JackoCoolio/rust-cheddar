@@ -1,6 +1,6 @@
 use core::{
+    mov::{Move, MoveFlag},
     position::Position,
-    r#move::{Move, MoveFlag},
 };
 
 use util::{assert_fen_eq, FenSegment};
